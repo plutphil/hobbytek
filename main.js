@@ -12,75 +12,131 @@ function dataViewToString(dataView) {
 
     return printableString;
 }
-  
+
 let devmap = {};
 function handleCharacteristicValueChanged(event) {
     const value = event.target.value;
     const s = dataViewToString(value)
-    console.log('Received ',value,s);
+    console.log('Received ', value, s);
     lastnotifieddata = value;
-    if(s.indexOf(":")!=-1){
+    if (s.indexOf(":") != -1) {
         const p = s.split(":");
         k = p[0];
         v = Number(p[1]);
-        console.log(s,p,k,v);
-        if(k in devmap){
-            devmap[k].style.background = v?"green":"black";
+        console.log(s, p, k, v);
+        if (k in devmap) {
+            devmap[k].style.background = v ? "green" : "black";
         }
     }
-  }
+}
 var writeChar = null;
 var readChar = null;
-function stringToByte(s){
+function stringToByte(s) {
     return (new TextEncoder('utf-8')).encode(s);
 }
 
-function writeChunks(command){
+function writeChunks(command) {
     let lastChunk = false;
     let endIndex = 17;
     let lastIndex = command.length;
     let startIndex = 0;
-    const loop=()=>{
-        if(!lastChunk){
+    const loop = () => {
+        if (!lastChunk) {
             let chunk = null;
-            if(endIndex < lastIndex){
-                chunk = command.substring(startIndex,17);
+            if (endIndex < lastIndex) {
+                chunk = command.substring(startIndex, 17);
                 chunk += "@";
             }
-            else
-            {
+            else {
                 chunk = command.substring(startIndex);
                 lastChunk = true;
             }
-            console.log("write",chunk)
-            writeChar.writeValueWithResponse(stringToByte(chunk)).then(res=>{
+            console.log("write", chunk)
+            writeChar.writeValueWithResponse(stringToByte(chunk)).then(res => {
                 console.log(res)
             }).catch((err) => {
                 console.error(err);
-              });
+            });
 
 
             startIndex = endIndex;
             endIndex = startIndex + 17;
-            if(endIndex > lastIndex){
+            if (endIndex > lastIndex) {
                 endIndex = lastIndex;
             }
-            setTimeout(loop,200);
+            setTimeout(loop, 200);
         }
     }
     loop();
 }
-function sendData(data){
-    if(data.length > 20){
+function sendData(data) {
+    if (data.length > 20) {
         writeChunks(data)
     }
-    else
-    {
-        writeChar.writeValueWithResponse(stringToByte(data)).then(res=>{
+    else {
+        writeChar.writeValueWithResponse(stringToByte(data)).then(res => {
             console.log(res)
         }).catch((err) => {
             console.error(err);
-          });
+        });
+    }
+}
+function time(text) {
+    log('[' + new Date().toJSON().substr(11, 8) + '] ' + text);
+}
+function exponentialBackoff(max, delay, toTry, success, fail) {
+    toTry().then(result => success(result))
+        .catch(_ => {
+            if (max === 0) {
+                return fail();
+            }
+            time('Retrying in ' + delay + 's... (' + max + ' tries left)');
+            setTimeout(function () {
+                exponentialBackoff(--max, delay * 2, toTry, success, fail);
+            }, delay * 1000);
+        });
+}
+function onDisconnected() {
+    log('> Bluetooth Device disconnected');
+    connect();
+}
+
+async function conn(device) {
+
+    device.addEventListener('gattserverdisconnected', onDisconnected);
+    const server = await device.gatt.connect();
+    console.log(server);
+    const services = await server.getPrimaryServices();
+    console.log(services);
+
+    const deviceInfo = document.getElementById('devices');
+    deviceInfo.innerHTML = '<h2>Found Services:</h2>';
+    for (const service of services) {
+        deviceInfo.innerHTML += `<h3>${service.uuid}</h3>`;
+
+        const characteristics = await service.getCharacteristics();
+        console.log(characteristics);
+        for (const characteristic of characteristics) {
+            deviceInfo.innerHTML += `<p>Characteristic UUID: ${characteristic.uuid}</p>`;
+            console.log(characteristic)
+            if (characteristic.properties.write) {
+                writeChar = characteristic;
+                setTimeout(() => {
+                    //public static string MagicConnectStringDataSchalt = "net-BT_ID-c0:ee:fb:90:b0:a7";
+                    //writeChunks("net-BT_ID-de:00:11:60:62:48");
+                    writeChunks("net-BT_ID-c0:ee:fb:90:b0:a7");
+                }, 500);
+            }
+            if (characteristic.properties.notify) {
+                characteristic.startNotifications()
+                    .then(characteristic => {
+                        characteristic.addEventListener('characteristicvaluechanged',
+                            handleCharacteristicValueChanged);
+                        console.log('Notifications have been started.');
+                    })
+                readChar = characteristic;
+            }
+        }
     }
 }
 async function startScan() {
@@ -89,56 +145,23 @@ async function startScan() {
             acceptAllDevices: true,
             optionalServices: ['c7841029-fe7c-4894-8532-f97908ef1ae4']
         });
-        
-        const server = await device.gatt.connect();
-        console.log(server);
-        const services = await server.getPrimaryServices();
-        console.log(services);
-        
-        const deviceInfo = document.getElementById('devices');
-        deviceInfo.innerHTML = '<h2>Found Services:</h2>';
-        for (const service of services) {
-            deviceInfo.innerHTML += `<h3>${service.uuid}</h3>`;
-            
-            const characteristics = await service.getCharacteristics();
-            console.log(characteristics);
-            for (const characteristic of characteristics) {
-                deviceInfo.innerHTML += `<p>Characteristic UUID: ${characteristic.uuid}</p>`;
-                console.log(characteristic)
-                if(characteristic.properties.write){
-                    writeChar = characteristic;
-                    setTimeout(()=>{
-                        //public static string MagicConnectStringDataSchalt = "net-BT_ID-c0:ee:fb:90:b0:a7";
-                        //writeChunks("net-BT_ID-de:00:11:60:62:48");
-                        writeChunks("net-BT_ID-c0:ee:fb:90:b0:a7");
-                    },500);
-                }
-                if(characteristic.properties.notify){
-                    characteristic.startNotifications()
-                    .then(characteristic => {
-                    characteristic.addEventListener('characteristicvaluechanged',
-                                                    handleCharacteristicValueChanged);
-                    console.log('Notifications have been started.');
-                    })
-                    readChar = characteristic;
-                }
-            }
-        }
+        conn(device);
+
     } catch (error) {
         console.error('Error: ' + error);
     }
 }
-window.onload=()=>{
+window.onload = () => {
     let btns = document.getElementById("btns");
-    function addButton(text,fun){
+    function addButton(text, fun) {
         let btn = document.createElement("div");
         btn.className = "btn";
-        btn.innerText= text;
+        btn.innerText = text;
         btn.onclick = fun;
         btns.appendChild(btn);
         return btn;
     }
-    const lightnames =  [
+    const lightnames = [
         "LIGHT_DECKE",
         "LIGHT_WAND",
         "LIGHT_BETTR",
@@ -157,22 +180,18 @@ window.onload=()=>{
         "LIGHT_BETT2R",
         "LIGHT_BETT1L",
         "LIGHT_BETT1R",
-        "LIGHT_KUECHE2",
-        "LIGHT_DIM0",
-        "LIGHT_DIM1",
-        "LIGHT_DIM2",
-        "LIGHT_DIM3",
-        "LIGHT_DIM4",
-        "LIGHT_DIM5",
-        "LIGHT_DIM6",
-        "LIGHT_DIM7"
-      ];
-    lightnames.forEach(e=>{
-        devmap[e]=addButton(e.substring(6),()=>{
-            sendData("cmd-tgl:"+e);
+        "LIGHT_KUECHE2"
+    ];
+    lightnames.forEach(e => {
+        devmap[e] = addButton(e.substring(6), () => {
+            sendData("cmd-tgl:" + e);
         })
-        
+
     })
-    
-    
+
+
 }
+
+navigator.bluetooth.getDevices().then(e => {
+    conn(e);
+})

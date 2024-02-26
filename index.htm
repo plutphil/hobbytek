@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hobbytek</title>
+</head>
+<body>
+    <style>
+        .btn{
+            width: 60pt;
+            height: 60pt;
+            background: #333;
+            display: inline-block;
+            padding: 5pt;
+            color: aliceblue;
+            text-align: center;
+            flex-direction: column;
+            vertical-align: middle;
+            justify-content: center;
+            font-family: Arial, Helvetica, sans-serif;
+            font-size: 18pt;
+            margin-top: 5pt;
+            margin-left: 5pt;
+            overflow-wrap: anywhere;
+        }
+        #btns{
+            
+        }
+    </style>
+    <script src="main.js"></script>
+    <h1>BLE Characteristic and Service Reader</h1>
+    <button onclick="startScan()">Scan for BLE Devices</button>
+    <div id="devices"></div>
+    <div id="btns">
+    </div>
+</body>
+</html>

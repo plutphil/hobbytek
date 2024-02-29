@@ -26,12 +26,8 @@ function dataViewToString(dataView) {
 }
 
 let devmap = {};
-function handleCharacteristicValueChanged(event) {
-    const value = event.target.value;
-    const s = dataViewToString(value)
-    log(s)
-    console.log('Received ', value, s);
-    lastnotifieddata = value;
+let laststringdata = "";
+function parseDate(s){
     if (s.indexOf(":") != -1) {
         const p = s.split(":");
         k = p[0];
@@ -40,7 +36,29 @@ function handleCharacteristicValueChanged(event) {
         if (k in devmap) {
             devmap[k].style.background = v ? "green" : "black";
         }
+        if (k in sensorMap){
+            sensorMap[k].textContent = p[1];
+        }
     }
+}
+function handleCharacteristicValueChanged(event) {
+    const value = event.target.value;
+    const s = dataViewToString(value)
+    log(s)
+    console.log('Received ', value, s);
+    
+    if(s.length>1){
+        if(s[s.length-1]=="@"){
+            laststringdata = s.substring(0,s.length-1);
+        }else{
+            if(laststringdata!=""){
+                parseDate(laststringdata+s)
+                laststringdata= "";
+            }
+        }
+    }
+    lastnotifieddata = value;
+    
 }
 var writeChar = null;
 var readChar = null;
@@ -172,8 +190,40 @@ async function startScan() {
         console.error('Error: ' + error);
     }
 }
+const SENSOR_NAMES = [
+    "TEMP_IN",
+    "TEMP_OUT",
+    "IBS0_IBAT",
+    "IBS0_UBAT",
+    "IBS0_SOC2",
+    "IBS0_REMAINING_TIME",
+    "HS_EN"
+];
+let sensorMap = {};
+function addBtnDiv(text, fun,parent) {
+    let btn = document.createElement("div");
+    btn.className = "btn2";
+    btn.innerText = text;
+    btn.onclick = fun;
+    parent.appendChild(btn);
+    return btn;
+}
 window.onload = () => {
     let btns = document.getElementById("btns");
+
+    SENSOR_NAMES.forEach(e=>{
+        d = addBtnDiv(e,()=>{
+
+        },document.getElementById("sensors"));
+        d.style.background="#eee";
+        d.style.color="#111";
+        
+        span = document.createElement("div")
+        d.appendChild(span)
+        span.innerText= "0.0";
+        sensorMap[e]=span;
+    })
+
     function addButton(text, fun) {
         let btn = document.createElement("div");
         btn.className = "btn";
@@ -207,10 +257,7 @@ window.onload = () => {
         devmap[e] = addButton(e.substring(6), () => {
             sendData("cmd-tgl:" + e);
         })
-
     })
-
-
 }
 
 navigator.bluetooth.getDevices().then(e => {

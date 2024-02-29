@@ -9,7 +9,25 @@
 <body>
     <style>
         .btn{
-            width: 60pt;
+            width: 80pt;
+            height: 40pt;
+            background: #333;
+            display: inline-block;
+            padding: 5pt;
+            color: aliceblue;
+            text-align: center;
+            flex-direction: column;
+            vertical-align: middle;
+            justify-content: center;
+            font-family: Arial, Helvetica, sans-serif;
+            font-size: 16pt;
+            margin-top: 5pt;
+            margin-left: 5pt;
+            overflow-wrap: anywhere;
+            user-select: none;
+        }
+        .btn2{
+            width: 160pt;
             height: 60pt;
             background: #333;
             display: inline-block;
@@ -47,11 +65,12 @@
     <button onclick="startScan()">CONNECT</button>
     <div id="btns">
     </div>
+    <div id="sensors">
+    </div>
     <div id="btns2">
         <div class="btn" onclick="sendData('net-HS_KEY');">HS KEY</div>
         <div class="btn" onclick="sendData('net-HS_KEY_LONG');">HS KEY LONG</div>
-        <div class="btn" onclick="sendData('cmd-tgl:HS_EN');">HS_EN</div>
-        
+        <!--<div class="btn" onclick="sendData('cmd-tgl:HS_EN');">HS_EN</div>-->
     </div>
     <div id="status">
         Not Connected press "Connect" to connect

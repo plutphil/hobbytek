@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" manifest="cache.appcache">
 <head>
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -36,17 +36,30 @@
             font-size: 20pt;
         }
         body{
+            color: aliceblue;
             background: #111;
             
             font-family: Arial, Helvetica, sans-serif;
-            font-size: 16pt;
+            font-size: 14pt;
         }
     </style>
     <script src="main.js"></script>
-    <button onclick="startScan()">Connect</button>
+    <button onclick="startScan()">CONNECT</button>
     <div id="btns">
     </div>
+    <div id="btns2">
+        <div class="btn" onclick="sendData('net-HS_KEY');">HS KEY</div>
+        <div class="btn" onclick="sendData('net-HS_KEY_LONG');">HS KEY LONG</div>
+        <div class="btn" onclick="sendData('cmd-tgl:HS_EN');">HS_EN</div>
+        
+    </div>
+    <div id="status">
+        Not Connected press "Connect" to connect
+    </div>
+    <div id="log">
+    </div>
     <div id="devices"></div>
+    
     
 </body>
 </html>

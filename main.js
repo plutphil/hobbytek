@@ -1,5 +1,17 @@
-
+function log(s){
+    console.log((new Date()).toLocaleString(),s)
+    const logs = document.getElementById("log");
+    const logentry = document.createElement("div");
+    logentry.className="logentry"
+    logentry.innerText = (new Date()).toLocaleString()+" "+s;
+    logs.appendChild(logentry)
+}
+function setStatus(stat){
+    document.getElementById("status").innerText=stat;
+    log("status: "+stat)
+}
 var lastnotifieddata = null;
+let currentdevice = null;
 function dataViewToString(dataView) {
     // Create a TextDecoder with the appropriate encoding (e.g., 'utf-8')
     const decoder = new TextDecoder('utf-8');
@@ -17,6 +29,7 @@ let devmap = {};
 function handleCharacteristicValueChanged(event) {
     const value = event.target.value;
     const s = dataViewToString(value)
+    log(s)
     console.log('Received ', value, s);
     lastnotifieddata = value;
     if (s.indexOf(":") != -1) {
@@ -81,6 +94,7 @@ function sendData(data) {
         });
     }
 }
+
 function time(text) {
     log('[' + new Date().toJSON().substr(11, 8) + '] ' + text);
 }
@@ -98,14 +112,21 @@ function exponentialBackoff(max, delay, toTry, success, fail) {
 }
 function onDisconnected() {
     log('> Bluetooth Device disconnected');
+    setStatus("disconnected");
     connect();
 }
 
 async function conn(device) {
 
+    currentdevice = device;
+    console.log(device);
     device.addEventListener('gattserverdisconnected', onDisconnected);
+    
+    setStatus("connecting");
     const server = await device.gatt.connect();
     console.log(server);
+    
+    setStatus("connected");
     const services = await server.getPrimaryServices();
     console.log(services);
 

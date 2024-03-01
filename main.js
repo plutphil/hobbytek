@@ -27,7 +27,7 @@ function dataViewToString(dataView) {
 
 let devmap = {};
 let laststringdata = "";
-function parseDate(s){
+function parseData(s){
     if (s.indexOf(":") != -1) {
         const p = s.split(":");
         k = p[0];
@@ -52,8 +52,10 @@ function handleCharacteristicValueChanged(event) {
             laststringdata = s.substring(0,s.length-1);
         }else{
             if(laststringdata!=""){
-                parseDate(laststringdata+s)
+                parseData(laststringdata+s)
                 laststringdata= "";
+            }else{
+                parseData(s)
             }
         }
     }
@@ -251,7 +253,8 @@ window.onload = () => {
         "LIGHT_BETT2R",
         "LIGHT_BETT1L",
         "LIGHT_BETT1R",
-        "LIGHT_KUECHE2"
+        "LIGHT_KUECHE2",
+        "LIGHT_THERME"
     ];
     lightnames.forEach(e => {
         devmap[e] = addButton(e.substring(6), () => {
